@@ -35,6 +35,7 @@ namespace DIP {
 		struct RGB;
 		struct HSI;
 		struct CIEXYZ;
+		struct CIELab;
 
 		struct Grayscale : Unitary {
 			Scalar Intensity;
@@ -57,6 +58,7 @@ namespace DIP {
 			F_SHORT RGB(Grayscale c);
 			F_SHORT RGB(HSI c);
 			F_SHORT RGB(CIEXYZ c);
+			F_SHORT RGB(CIELab c);
 			F_GETTER string Name() {
 				return "RGB";
 			};
@@ -91,11 +93,16 @@ namespace DIP {
 			};
 		};
 		struct CIEXYZ : Tenary {
-			Scalar X;
-			Scalar Y;
-			Scalar Z;
+			/* CIEXYZ, Observer 2°, Illuminant D65 */
+			constexpr static Scalar Xref = 0.9505;
+			constexpr static Scalar Yref = 1.0000;
+			constexpr static Scalar Zref = 1.0890;
+			Scalar X;	// 0 .. Xref
+			Scalar Y;	// 0 .. Yref
+			Scalar Z;	// 0 .. Zref
 			F_SHORT CIEXYZ(Scalar X, Scalar Y, Scalar Z);
 			F_SHORT CIEXYZ(RGB c);
+			F_SHORT CIEXYZ(CIELab c);
 			F_GETTER string Name() {
 				return "CIEXYZ";
 			};
@@ -107,6 +114,32 @@ namespace DIP {
 			};
 			F_GETTER Scalar Third() {
 				return Z;
+			};
+		};
+		struct CIELab : Tenary {
+			Scalar L;
+			// 4 / 29 .. 116 * Yref ^ (1 / 3) - 16
+			// 0.13793103448275862 .. 100
+			Scalar a;
+			// -500 * Yref ^ (1 / 3) .. 500 * Xref ^ (1 / 3)
+			// -500 .. 491.61000336493856
+			Scalar b;
+			// -500 * Zref ^ (1 / 3) .. 500 * Yref ^ (1 / 3)
+			// -514.4138239050887 .. 500
+			F_SHORT CIELab(Scalar L, Scalar a, Scalar b);
+			F_SHORT CIELab(RGB c);
+			F_SHORT CIELab(CIEXYZ c);
+			F_GETTER string Name() {
+				return "CIELab";
+			};
+			F_GETTER Scalar First() {
+				return L;
+			};
+			F_GETTER Scalar Second() {
+				return a;
+			};
+			F_GETTER Scalar Third() {
+				return b;
 			};
 		};
 
@@ -167,9 +200,14 @@ namespace DIP {
 
 		F_SHORT RGB::RGB(CIEXYZ c)
 		{
-			Red   = c.X *  2.36461385 + c.Y * -0.89654057 + c.Z * -0.46807328;
-			Green = c.X * -0.51516621 + c.Y *  1.4264081  + c.Z *  0.0887581;
-			Blue  = c.X *  0.0052037  + c.Y * -0.01440816 + c.Z *  1.00920446;
+			Red   = c.X *  3.24062548 + c.Y * -1.53720797 + c.Z * -0.49862860;
+			Green = c.X * -0.96893071 + c.Y *  1.87575606 + c.Z *  0.04151752;
+			Blue  = c.X *  0.05571012 + c.Y * -0.20402105 + c.Z *  1.05699594;
+		}
+
+		F_SHORT RGB::RGB(CIELab c)
+		{
+			*this = CIEXYZ(c);
 		}
 
 		F_SHORT HSI::HSI(Scalar h, Scalar s, Scalar i) :
@@ -221,9 +259,70 @@ namespace DIP {
 
 		F_SHORT CIEXYZ::CIEXYZ(RGB c)
 		{
-			X = c.Red * 0.49    + c.Green * 0.31   + c.Blue * 0.2;
-			Y = c.Red * 0.17697 + c.Green * 0.8124 + c.Blue * 0.01063;
-			Z = c.Red * 0       + c.Green * 0.01   + c.Blue * 0.99;
+			X = c.Red * 0.4124 + c.Green * 0.3576 + c.Blue * 0.1805;
+			Y = c.Red * 0.2126 + c.Green * 0.7152 + c.Blue * 0.0722;
+			Z = c.Red * 0.0193 + c.Green * 0.1192 + c.Blue * 0.9505;
+		}
+
+		F_SHORT Scalar
+		lab_xyz_f(Scalar x)
+		{
+			const Scalar ftnth = 0.13793103448275862;
+			// 4 / 29
+			const Scalar delta = 0.20689655172413793;
+			// 6 / 29
+			const Scalar delta2 = 0.04280618311533888;
+			// delta ^ 2
+			if (x > delta) {
+				return pow(x, 3.);
+			} else {
+				return 3 * delta2 * (x - ftnth);
+			};
+		}
+
+		F_SHORT CIEXYZ::CIEXYZ(CIELab c)
+		{
+			X = Xref * lab_xyz_f((c.L + 16) / 116 + c.a / 500);
+			Y = Yref * lab_xyz_f((c.L + 16) / 116);
+			Z = Zref * lab_xyz_f((c.L + 16) / 116 - c.b / 200);
+		}
+
+		F_SHORT CIELab::CIELab(Scalar cL, Scalar ca, Scalar cb) :
+			L(cL), a(ca), b(cb)
+		{
+		}
+
+		F_SHORT CIELab::CIELab(RGB c)
+		{
+			*this = CIEXYZ(c);
+		}
+
+		F_SHORT Scalar
+		xyz_lab_f(Scalar x)
+		{
+			const Scalar ftnth = 0.13793103448275862;
+			// 4 / 29
+			//const Scalar delta = 0.20689655172413793;
+			// 6 / 29
+			const Scalar delta2 = 0.04280618311533888;
+			// delta ^ 2
+			const Scalar delta3 = 0.008856451679035631;
+			// delta ^ 3
+			if (x > delta3) {
+				return pow(x, 1. / 3);
+			} else {
+				return x / (3 * delta2) + ftnth;
+			};
+		}
+
+		F_SHORT CIELab::CIELab(CIEXYZ c)
+		{
+			Scalar fx = xyz_lab_f(c.X / c.Xref);
+			Scalar fy = xyz_lab_f(c.Y / c.Yref);
+			Scalar fz = xyz_lab_f(c.Z / c.Zref);
+			L = 116 * fy - 16;
+			a = 500 * (fx - fy);
+			b = 200 * (fy - fz);
 		}
 	};
 };
