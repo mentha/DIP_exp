@@ -25,6 +25,8 @@ namespace DIP {
 
 		DEF(LogicError, logic_error);
 		DEF(RuntimeError, runtime_error);
+		DEF(IOError, RuntimeError);
+		DEF(UnknownColorFormatError, IOError);
 		DEF(NotImplemented, Base, LogicError);
 	};
 };

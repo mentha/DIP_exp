@@ -37,6 +37,35 @@ namespace DIP {
 			InitializeMagick(dllpath);
 		};
 
+		inline void
+		getRGB(Quantum *&px, Scalar &r, Scalar &g, Scalar &b, size_t ch)
+		{
+			switch (ch) {
+				case 1: {
+					r = (Scalar)*px++ / QuantumRange;
+					g = r;
+					b = r;
+					break;
+				};
+				case 3: {
+					r = (Scalar)*px++ / QuantumRange;
+					g = (Scalar)*px++ / QuantumRange;
+					b = (Scalar)*px++ / QuantumRange;
+					break;
+				};
+				case 4: {
+					r = (Scalar)*px++ / QuantumRange;
+					g = (Scalar)*px++ / QuantumRange;
+					b = (Scalar)*px++ / QuantumRange;
+					px++;
+					break;
+				};
+				default:
+					throw Exception::
+						UnknownColorFormatError();
+			};
+		}
+
 		template <class CS = ColorSpace::HSI>
 		F_LONG void
 		Load(
@@ -47,19 +76,18 @@ namespace DIP {
 				)
 		{
 			magickInit();
-			Image img(uri);
-			A.resize(img.rows(), img.columns());
-			B.resize(img.rows(), img.columns());
-			C.resize(img.rows(), img.columns());
+			Image im(uri);
+			im.type(TrueColorType);
+			A.resize(im.rows(), im.columns());
+			B.resize(im.rows(), im.columns());
+			C.resize(im.rows(), im.columns());
 			Scalar *pA = A.data(), *pB = B.data(), *pC = C.data();
-			auto pixels =
-				img.getPixels(0, 0, img.columns(), img.rows());
+			Quantum *pixels =
+				im.getPixels(0, 0, im.columns(), im.rows());
+			size_t channels = im.channels();
 			for (Index c = 0; c < A.size(); c++) {
-				Color p(*pixels++);
 				Scalar r, g, b;
-				r = (Scalar)p.redQuantum() / MaxRGB;
-				g = (Scalar)p.greenQuantum() / MaxRGB;
-				b = (Scalar)p.blueQuantum() / MaxRGB;
+				getRGB(pixels, r, g, b, channels);
 
 				CS rc = ColorSpace::RGB(r, g, b);;
 				*(pA++) = rc.First();
@@ -74,16 +102,15 @@ namespace DIP {
 		{
 			magickInit();
 			Image img(uri);
+			img.type(TrueColorType);
 			A.resize(img.rows(), img.columns());
 			Scalar *pA = A.data();
-			auto pixels =
+			Quantum *pixels =
 				img.getPixels(0, 0, img.columns(), img.rows());
+			size_t channels = img.channels();
 			for (Index c = 0; c < A.size(); c++) {
-				Color p(*pixels++);
 				Scalar r, g, b;
-				r = (Scalar)p.redQuantum() / MaxRGB;
-				g = (Scalar)p.greenQuantum() / MaxRGB;
-				b = (Scalar)p.blueQuantum() / MaxRGB;
+				getRGB(pixels, r, g, b, channels);
 
 				CS rc = ColorSpace::RGB(r, g, b);
 				*(pA++) = rc.First();
@@ -101,8 +128,9 @@ namespace DIP {
 		{
 			magickInit();
 			Image im(Geometry(A.cols(), A.rows()), Color("white"));
-			auto pixels =
-				im.getPixels(0, 0, im.columns(), im.rows());
+			im.type(TrueColorType);
+			Quantum *pixels =
+				im.setPixels(0, 0, im.columns(), im.rows());
 			auto pA = A.data(), pB = B.data(), pC = C.data();
 			for (Index i = 0; i < A.size(); i++) {
 				Scalar a, b, c;
@@ -112,10 +140,9 @@ namespace DIP {
 
 				ColorSpace::RGB oc = CS(a, b, c);
 
-				Color col(oc.Red * MaxRGB,
-						oc.Green * MaxRGB,
-						oc.Blue * MaxRGB);
-				*pixels++ = col;
+				*pixels++ = QuantumRange * oc.Red;
+				*pixels++ = QuantumRange * oc.Green;
+				*pixels++ = QuantumRange * oc.Blue;
 			};
 			im.syncPixels();
 			im.write(uri);
@@ -127,18 +154,18 @@ namespace DIP {
 		{
 			magickInit();
 			Image im(Geometry(A.cols(), A.rows()), Color("white"));
-			auto pixels =
-				im.getPixels(0, 0, im.columns(), im.rows());
+			im.type(TrueColorType);
+			Quantum *pixels =
+				im.setPixels(0, 0, im.columns(), im.rows());
 			auto pA = A.data();
 			for (Index c = 0; c < A.size(); c++) {
 				Scalar a = *(pA++);
 
 				ColorSpace::RGB oc = CS(a);
 
-				Color col(oc.Red * MaxRGB,
-						oc.Green * MaxRGB,
-						oc.Blue * MaxRGB);
-				*pixels++ = col;
+				*pixels++ = QuantumRange * oc.Red;
+				*pixels++ = QuantumRange * oc.Green;
+				*pixels++ = QuantumRange * oc.Blue;
 			};
 			im.syncPixels();
 			im.write(uri);
