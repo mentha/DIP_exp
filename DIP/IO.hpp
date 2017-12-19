@@ -93,6 +93,46 @@ namespace DIP {
 			};
 		}
 
+		inline void
+		setRGB_s(
+				Quantum *&px,
+				Scalar &r, Scalar &g, Scalar &b,
+				size_t ch,
+				Scalar sr = 0,
+				Scalar sg = 0,
+				Scalar sb = 0
+			)
+		{
+			if (r < 0 || g < 0 || b < 0 ||
+					r > 1 || g > 1 || b > 1) {
+				r = sr;
+				g = sg;
+				b = sb;
+			};
+			switch (ch) {
+				case 1: {
+					*px++ = (r + g + b) * QuantumRange / 3;
+					break;
+				};
+				case 3: {
+					*px++ = r * QuantumRange;
+					*px++ = g * QuantumRange;
+					*px++ = b * QuantumRange;
+					break;
+				};
+				case 4: {
+					*px++ = r * QuantumRange;
+					*px++ = g * QuantumRange;
+					*px++ = b * QuantumRange;
+					*px++ = 0;
+					break;
+				};
+				default:
+					throw Exception::
+						UnknownColorFormatError();
+			};
+		}
+
 		template <class CS = ColorSpace::RGB>
 		F_LONG void
 		Load(
@@ -150,7 +190,8 @@ namespace DIP {
 				std::string uri,
 				ScalarArray &A,
 				ScalarArray &B,
-				ScalarArray &C
+				ScalarArray &C,
+				bool safe = true // check out of range
 				)
 		{
 			magickInit();
@@ -160,16 +201,34 @@ namespace DIP {
 				im.getPixels(0, 0, im.columns(), im.rows());
 			size_t channels = im.channels();
 			auto pA = A.data(), pB = B.data(), pC = C.data();
-			for (Index i = 0; i < A.size(); i++) {
-				Scalar a, b, c;
-				a = *(pA++);
-				b = *(pB++);
-				c = *(pC++);
+			if (safe) {
+				for (Index i = 0; i < A.size(); i++) {
+					Scalar a, b, c;
+					a = *(pA++);
+					b = *(pB++);
+					c = *(pC++);
 
-				ColorSpace::RGB oc = CS(a, b, c);
-				setRGB(pixels,
-						oc.Red, oc.Green, oc.Blue,
-						channels);
+					ColorSpace::RGB oc = CS(a, b, c);
+					setRGB(pixels,
+							oc.Red,
+							oc.Green,
+							oc.Blue,
+							channels);
+				};
+			} else {
+				for (Index i = 0; i < A.size(); i++) {
+					Scalar a, b, c;
+					a = *(pA++);
+					b = *(pB++);
+					c = *(pC++);
+
+					ColorSpace::RGB oc = CS(a, b, c);
+					setRGB_s(pixels,
+							oc.Red,
+							oc.Green,
+							oc.Blue,
+							channels);
+				};
 			};
 			im.syncPixels();
 			im.write(uri);
