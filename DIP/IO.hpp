@@ -66,7 +66,34 @@ namespace DIP {
 			};
 		}
 
-		template <class CS = ColorSpace::HSI>
+		inline void
+		setRGB(Quantum *&px, Scalar &r, Scalar &g, Scalar &b, size_t ch)
+		{
+			switch (ch) {
+				case 1: {
+					*px++ = (r + g + b) * QuantumRange / 3;
+					break;
+				};
+				case 3: {
+					*px++ = r * QuantumRange;
+					*px++ = g * QuantumRange;
+					*px++ = b * QuantumRange;
+					break;
+				};
+				case 4: {
+					*px++ = r * QuantumRange;
+					*px++ = g * QuantumRange;
+					*px++ = b * QuantumRange;
+					*px++ = 0;
+					break;
+				};
+				default:
+					throw Exception::
+						UnknownColorFormatError();
+			};
+		}
+
+		template <class CS = ColorSpace::RGB>
 		F_LONG void
 		Load(
 				std::string uri,
@@ -117,7 +144,7 @@ namespace DIP {
 			};
 		}
 
-		template <class CS = ColorSpace::HSI>
+		template <class CS = ColorSpace::RGB>
 		F_LONG void
 		Save(
 				std::string uri,
@@ -130,7 +157,8 @@ namespace DIP {
 			Image im(Geometry(A.cols(), A.rows()), Color("white"));
 			im.type(TrueColorType);
 			Quantum *pixels =
-				im.setPixels(0, 0, im.columns(), im.rows());
+				im.getPixels(0, 0, im.columns(), im.rows());
+			size_t channels = im.channels();
 			auto pA = A.data(), pB = B.data(), pC = C.data();
 			for (Index i = 0; i < A.size(); i++) {
 				Scalar a, b, c;
@@ -139,10 +167,9 @@ namespace DIP {
 				c = *(pC++);
 
 				ColorSpace::RGB oc = CS(a, b, c);
-
-				*pixels++ = QuantumRange * oc.Red;
-				*pixels++ = QuantumRange * oc.Green;
-				*pixels++ = QuantumRange * oc.Blue;
+				setRGB(pixels,
+						oc.Red, oc.Green, oc.Blue,
+						channels);
 			};
 			im.syncPixels();
 			im.write(uri);
@@ -156,16 +183,16 @@ namespace DIP {
 			Image im(Geometry(A.cols(), A.rows()), Color("white"));
 			im.type(TrueColorType);
 			Quantum *pixels =
-				im.setPixels(0, 0, im.columns(), im.rows());
+				im.getPixels(0, 0, im.columns(), im.rows());
+			size_t channels = im.channels();
 			auto pA = A.data();
 			for (Index c = 0; c < A.size(); c++) {
 				Scalar a = *(pA++);
 
 				ColorSpace::RGB oc = CS(a);
-
-				*pixels++ = QuantumRange * oc.Red;
-				*pixels++ = QuantumRange * oc.Green;
-				*pixels++ = QuantumRange * oc.Blue;
+				setRGB(pixels,
+						oc.Red, oc.Green, oc.Blue,
+						channels);
 			};
 			im.syncPixels();
 			im.write(uri);
