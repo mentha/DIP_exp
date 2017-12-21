@@ -14,10 +14,12 @@
 #include <DIP/Math/FFT.hpp>
 #include <DIP/Math/Gaussian.hpp>
 #include <DIP/Range/Range.hpp>
+#include <DIP/Spatial/Bilateral.hpp>
 #include <DIP/Spatial/BoxFilter.hpp>
 #include <DIP/Spatial/Gaussian.hpp>
 #include <DIP/Spatial/Smoothing.hpp>
 #include <DIP/Types.hpp>
+#include <DIP/Util/GaussianBilateral.hpp>
 #include <DIP/Util/GaussianFilter.hpp>
 
 #undef EIGEN_DEFAULT_DENSE_INDEX_TYPE
