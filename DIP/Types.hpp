@@ -23,6 +23,12 @@ namespace DIP {
 		Eigen::RowMajor
 			>
 			ComplexArray;
+
+	inline bool isZero(Scalar n)
+	{
+		const Scalar th = 1e-10;
+		return -th < n && n < th;
+	}
 };
 
 #endif

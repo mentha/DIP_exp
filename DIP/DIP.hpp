@@ -13,6 +13,7 @@
 #include <DIP/Math/ArrayOperations.hpp>
 #include <DIP/Math/FFT.hpp>
 #include <DIP/Math/Gaussian.hpp>
+#include <DIP/Range/Range.hpp>
 #include <DIP/Spatial/BoxFilter.hpp>
 #include <DIP/Spatial/Gaussian.hpp>
 #include <DIP/Spatial/Smoothing.hpp>
