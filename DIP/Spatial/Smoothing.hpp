@@ -14,15 +14,15 @@ namespace DIP {
 		using namespace std;
 
 		F_SHORT ScalarArray
-		Smoothing(Index sz)
+		Smoothing(ScalarArray &in, Index sz)
 		{
 			assert(sz % 2 == 1);
-			ScalarArray ret(sz, sz);
-			Scalar v = (Scalar)1 / ret.size();
-			Scalar *p = ret.data();
-			for (Index i = 0; i < ret.size(); i++)
+			ScalarArray k(sz, sz);
+			Scalar v = (Scalar)1 / k.size();
+			Scalar *p = k.data();
+			for (Index i = 0; i < k.size(); i++)
 				*(p++) = v;
-			return ret;
+			return BoxFilter(in, k);
 		}
 	};
 };
