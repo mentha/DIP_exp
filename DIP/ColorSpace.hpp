@@ -317,9 +317,9 @@ namespace DIP {
 
 		F_SHORT CIELab::CIELab(CIEXYZ c)
 		{
-			Scalar fx = xyz_lab_f(c.X / c.Xref);
-			Scalar fy = xyz_lab_f(c.Y / c.Yref);
-			Scalar fz = xyz_lab_f(c.Z / c.Zref);
+			Scalar fx = xyz_lab_f(c.X / CIEXYZ::Xref);
+			Scalar fy = xyz_lab_f(c.Y / CIEXYZ::Yref);
+			Scalar fz = xyz_lab_f(c.Z / CIEXYZ::Zref);
 			L = 116 * fy - 16;
 			a = 500 * (fx - fy);
 			b = 200 * (fy - fz);
