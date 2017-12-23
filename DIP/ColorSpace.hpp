@@ -203,6 +203,18 @@ namespace DIP {
 			Red   = c.X *  3.24062548 + c.Y * -1.53720797 + c.Z * -0.49862860;
 			Green = c.X * -0.96893071 + c.Y *  1.87575606 + c.Z *  0.04151752;
 			Blue  = c.X *  0.05571012 + c.Y * -0.20402105 + c.Z *  1.05699594;
+			if (Red < 0)
+				Red = 0;
+			if (Red > 1)
+				Red = 1;
+			if (Green < 0)
+				Green = 0;
+			if (Green > 1)
+				Green = 1;
+			if (Blue < 0)
+				Blue = 0;
+			if (Blue > 1)
+				Blue = 1;
 		}
 
 		F_SHORT RGB::RGB(CIELab c)
